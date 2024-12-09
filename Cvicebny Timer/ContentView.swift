@@ -18,22 +18,22 @@ struct ContentView: View {
     @State private var ended = false
 
     var body: some View {
-        ZStack {
-            // Pastelový gradient pozadie
-            LinearGradient(gradient: Gradient(colors: [
-                Color.pink.opacity(0.4),
-                Color.purple.opacity(0.4)
-            ]), startPoint: .topLeading, endPoint: .bottomTrailing)
-            .ignoresSafeArea()
+        GeometryReader { geo in
+            ZStack {
+                // Pastelový gradient pozadie
+                LinearGradient(gradient: Gradient(colors: [
+                    Color.pink.opacity(0.4),
+                    Color.purple.opacity(0.4)
+                ]), startPoint: .topLeading, endPoint: .bottomTrailing)
+                .ignoresSafeArea()
 
-            Group {
                 if ended {
-                    // Obrazovka po skončení cviku
+                    // Celá obrazovka: Koniec cviku
                     VStack(spacing: 40) {
                         Text("👏 Koniec cviku 👏")
-                            .font(.system(size: 60, weight: .bold))
-                            .padding()
+                            .font(.system(size: 100, weight: .bold))
                             .foregroundColor(.white)
+                            .padding()
                             .background(.ultraThinMaterial)
                             .cornerRadius(25)
 
@@ -48,67 +48,81 @@ struct ContentView: View {
                         .tint(.pink)
                         .cornerRadius(10)
                     }
+                    .frame(width: geo.size.width, height: geo.size.height)
                 } else {
-                    HStack(spacing: 40) {
-                        // Časovač a tlačidlá
-                        VStack(spacing: 20) {
-                            Text("\(currentSecond) s")
-                                .font(.system(size: 160, weight: .bold))
-                                .foregroundColor(.white)
-                                .padding()
-                                .background(.ultraThinMaterial)
-                                .cornerRadius(20)
+                    // Rozloženie na 50:50 obrazovky horizontálne
+                    HStack(spacing: 0) {
+                        // Ľavá 1/4 šírky pre časovač a ovládacie prvky
+                        ZStack {
+                            VStack(spacing: 20) {
+                                Text("\(currentSecond) s")
+                                    .font(.system(size: 160, weight: .bold))
+                                    .foregroundColor(.white)
+                                    .padding()
+                                    .background(.ultraThinMaterial)
+                                    .cornerRadius(20)
 
-                            Button(timerRunning ? "Pauza" : "Štart") {
-                                if timerRunning {
-                                    stopTimer()
-                                } else {
-                                    startTimer()
+                                HStack(spacing: 40) {
+                                    Button(timerRunning ? "Pauza" : "Štart") {
+                                        if timerRunning {
+                                            stopTimer()
+                                        } else {
+                                            startTimer()
+                                        }
+                                    }
+                                    .font(.title2)
+                                    .buttonStyle(.borderedProminent)
+                                    .tint(timerRunning ? .purple : .pink)
+                                    .cornerRadius(10)
+
+                                    Button("Reset") {
+                                        totalSeconds = 60
+                                        totalSeries = 5
+                                        restSeconds = 15
+                                        resetTimer()
+                                    }
+                                    .font(.title2)
+                                    .buttonStyle(.bordered)
+                                    .tint(.purple)
+                                    .cornerRadius(10)
                                 }
                             }
-                            .font(.title2)
-                            .buttonStyle(.borderedProminent)
-                            .tint(timerRunning ? .purple : .pink)
-                            .cornerRadius(10)
-
-                            Button("Reset") {
-                                totalSeconds = 60
-                                totalSeries = 5
-                                restSeconds = 15
-                                resetTimer()
-                            }
-                            .font(.title2)
-                            .buttonStyle(.bordered)
-                            .tint(.purple)
-                            .cornerRadius(10)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .padding()
                         }
+                        .frame(width: geo.size.width * 0.5)
 
-                        // Séria / Prestávka a nastavenia
-                        VStack(spacing: 20) {
-                            if inRestPeriod {
-                                Text("Prestávka")
-                                    .font(.system(size: 100, weight: .semibold))
-                                    .foregroundColor(.white)
-                                    .padding()
-                                    .background(.ultraThinMaterial)
-                                    .cornerRadius(20)
-                            } else {
-                                Text("Séria: \(currentSeries)/\(totalSeries)")
-                                    .font(.system(size: 100, weight: .semibold))
-                                    .foregroundColor(.white)
-                                    .padding()
-                                    .background(.ultraThinMaterial)
-                                    .cornerRadius(20)
-                            }
+                        // Pravá 3/4 šírky pre sériu/prestávku a nastavenia
+                        ZStack {
+                            VStack(spacing: 40) {
+                                if inRestPeriod {
+                                    Text("Prestávka")
+                                        .font(.system(size: 100, weight: .semibold))
+                                        .foregroundColor(.white)
+                                        .padding()
+                                        .background(.ultraThinMaterial)
+                                        .cornerRadius(20)
+                                } else {
+                                    Text("Séria: \(currentSeries)/\(totalSeries)")
+                                        .font(.system(size: 60, weight: .semibold))
+                                        .foregroundColor(.white)
+                                        .padding()
+                                        .background(.ultraThinMaterial)
+                                        .cornerRadius(20)
+                                }
 
-                            Button("Uprav časovač") {
-                                showSettings.toggle()
+                                Button("Uprav časovač") {
+                                    showSettings.toggle()
+                                }
+                                .font(.title2)
+                                .buttonStyle(.borderedProminent)
+                                .tint(.pink)
+                                .cornerRadius(10)
                             }
-                            .font(.title2)
-                            .buttonStyle(.borderedProminent)
-                            .tint(.pink)
-                            .cornerRadius(10)
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .padding()
                         }
+                        .frame(width: geo.size.width * 0.5)
                     }
                     .sheet(isPresented: $showSettings) {
                         SettingsView(totalSeconds: $totalSeconds,
@@ -120,7 +134,6 @@ struct ContentView: View {
                     }
                 }
             }
-            .padding()
         }
     }
 
@@ -265,7 +278,6 @@ struct SettingsView: View {
         .background(.ultraThinMaterial)
         .cornerRadius(20)
         .padding()
-        // Pridáme pozadie pre nastavenia, aby ladilo so zvyškom
         .background(
             LinearGradient(gradient: Gradient(colors: [
                 Color.pink.opacity(0.3),
