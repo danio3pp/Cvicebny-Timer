@@ -90,7 +90,7 @@ struct ContentView: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .padding()
                         }
-                        .frame(width: geo.size.width * 0.5)
+                        .frame(width: geo.size.width * 0.6)
 
                         // Pravá 3/4 šírky pre sériu/prestávku a nastavenia
                         ZStack {
@@ -122,10 +122,10 @@ struct ContentView: View {
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .padding()
                         }
-                        .frame(width: geo.size.width * 0.5)
+                        .frame(width: geo.size.width * 0.4)
                     }
                     .sheet(isPresented: $showSettings) {
-                        SettingsView(totalSeconds: $totalSeconds,
+                        SettingsView(totalSeconds: $totalSeconds,   
                                      totalSeries: $totalSeries,
                                      restSeconds: $restSeconds,
                                      onSave: {
