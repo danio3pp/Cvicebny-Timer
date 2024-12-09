@@ -23,9 +23,12 @@ struct ContentView: View {
                 // Všetko dokončené, zobraz len "Koniec cviku" a tlačidlo Reset
                 VStack {
                     Text("Koniec cviku")
-                        .font(.system(size: 50))
+                        .font(.system(size: 100))
                         .padding()
                     Button("Reset") {
+                        totalSeconds = 60
+                        totalSeries = 5
+                        restSeconds = 15
                         resetTimer()
                     }
                     .font(.title)
