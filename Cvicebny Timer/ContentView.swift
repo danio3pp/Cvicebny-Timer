@@ -1,5 +1,6 @@
 import SwiftUI
-import AudioToolbox // Pre zvuk
+import AudioToolbox
+import UIKit // Pre prístup k UIApplication
 
 struct ContentView: View {
     @State private var totalSeconds = 60
@@ -13,61 +14,88 @@ struct ContentView: View {
     @State private var showSettings = false
     @State private var timer: Timer? = nil
 
-    // Určuje, či sme v prestávke alebo sérii
     @State private var inRestPeriod = false
+    @State private var ended = false // Indikátor, či sme dokončili všetky série
 
     var body: some View {
-        HStack {
-            VStack {
-                Text("\(currentSecond) s")
-                    .font(.system(size: 100))
-                    .padding()
-                Button(timerRunning ? "Pauza" : "Štart") {
-                    if timerRunning {
-                        stopTimer()
-                    } else {
-                        startTimer()
+        Group {
+            if ended {
+                // Všetko dokončené, zobraz len "Koniec cviku" a tlačidlo Reset
+                VStack {
+                    Text("Koniec cviku")
+                        .font(.system(size: 50))
+                        .padding()
+                    Button("Reset") {
+                        resetTimer()
                     }
-                }
-                .padding(.bottom, 20)
-                .font(.title)
-
-                Button("Reset") {
-                    totalSeconds = 60
-                    totalSeries = 5
-                    restSeconds = 15
-                    resetTimer()
-                }
-                .font(.title)
-            }
-            .frame(minWidth: 300)
-
-            VStack {
-                Text("Séria: \(currentSeries)/\(totalSeries)")
-                    .font(.system(size: 40))
+                    .font(.title)
                     .padding()
-                Button("Uprav časovač") {
-                    showSettings.toggle()
                 }
-                .font(.title)
+            } else {
+                // Bežné UI
+                HStack {
+                    VStack {
+                        Text("\(currentSecond) s")
+                            .font(.system(size: 100))
+                            .padding()
+                        Button(timerRunning ? "Pauza" : "Štart") {
+                            if timerRunning {
+                                stopTimer()
+                            } else {
+                                startTimer()
+                            }
+                        }
+                        .padding(.bottom, 20)
+                        .font(.title)
+
+                        Button("Reset") {
+                            totalSeconds = 60
+                            totalSeries = 5
+                            restSeconds = 15
+                            resetTimer()
+                        }
+                        .font(.title)
+                    }
+                    .frame(minWidth: 300)
+
+                    VStack {
+                        // Ak sme v prestávke, zobraz "Prestávka" inak zobrazi sériu
+                        if inRestPeriod {
+                            Text("Prestávka")
+                                .font(.system(size: 40))
+                                .padding()
+                        } else {
+                            Text("Séria: \(currentSeries)/\(totalSeries)")
+                                .font(.system(size: 40))
+                                .padding()
+                        }
+
+                        Button("Uprav časovač") {
+                            showSettings.toggle()
+                        }
+                        .font(.title)
+                    }
+                    .frame(minWidth: 300)
+                }
+                .sheet(isPresented: $showSettings) {
+                    SettingsView(totalSeconds: $totalSeconds,
+                                 totalSeries: $totalSeries,
+                                 restSeconds: $restSeconds,
+                                 onSave: {
+                        resetTimer()
+                    })
+                }
             }
-            .frame(minWidth: 300)
-        }
-        .sheet(isPresented: $showSettings) {
-            SettingsView(totalSeconds: $totalSeconds,
-                         totalSeries: $totalSeries,
-                         restSeconds: $restSeconds,
-                         onSave: {
-                resetTimer()
-            })
         }
     }
 
     func startTimer() {
         guard !timerRunning else { return }
         timerRunning = true
+        ended = false
         inRestPeriod = false
         currentSecond = totalSeconds
+        UIApplication.shared.isIdleTimerDisabled = true
         timer = Timer.scheduledTimer(withTimeInterval: 1.0, repeats: true) { _ in
             tick()
         }
@@ -77,29 +105,40 @@ struct ContentView: View {
         timerRunning = false
         timer?.invalidate()
         timer = nil
+        UIApplication.shared.isIdleTimerDisabled = false
     }
 
     func tick() {
-        if currentSecond > 0 {
-            currentSecond -= 1
-        } else {
-            // Čas vypršal
-            if inRestPeriod {
-                // Skončila prestávka, začíname novú sériu
+        if ended {
+            return
+        }
+
+        if inRestPeriod {
+            // Prestávka: počítame od 0 nahor
+            if currentSecond < restSeconds {
+                currentSecond += 1
+            } else {
+                // Prestávka ukončená
+                AudioServicesPlaySystemSound(1005)
                 inRestPeriod = false
                 currentSecond = totalSeconds
+            }
+        } else {
+            // Séria: odpočítavame smerom dole
+            if currentSecond > 0 {
+                currentSecond -= 1
             } else {
                 // Dokončená séria
                 AudioServicesPlaySystemSound(1005)
-
                 currentSeries += 1
                 if currentSeries > totalSeries {
                     // Všetky série dokončené
                     stopTimer()
+                    ended = true
                 } else {
                     // Začneme prestávku
                     inRestPeriod = true
-                    currentSecond = restSeconds
+                    currentSecond = 0
                 }
             }
         }
@@ -108,8 +147,9 @@ struct ContentView: View {
     func resetTimer() {
         stopTimer()
         currentSeries = 1
-        currentSecond = totalSeconds
         inRestPeriod = false
+        currentSecond = totalSeconds
+        ended = false
     }
 }
 
@@ -143,7 +183,7 @@ struct SettingsView: View {
 
             Text("Počet sekúnd (séria): \(totalSeconds)")
             Slider(value: $sliderSeconds, in: 10...120)
-                .onChange(of: sliderSeconds) { oldValue, newValue in
+                .onChange(of: sliderSeconds) { _, newValue in
                     let roundedVal = (newValue / 5).rounded() * 5
                     totalSeconds = Int(roundedVal)
                     sliderSeconds = roundedVal
@@ -152,7 +192,7 @@ struct SettingsView: View {
 
             Text("Počet sérií: \(totalSeries)")
             Slider(value: $sliderSeries, in: 1...10)
-                .onChange(of: sliderSeries) { oldValue, newValue in
+                .onChange(of: sliderSeries) { _, newValue in
                     let roundedVal = round(newValue)
                     totalSeries = Int(roundedVal)
                     sliderSeries = roundedVal
@@ -161,9 +201,8 @@ struct SettingsView: View {
 
             Text("Dĺžka prestávky: \(restSeconds)s")
             Slider(value: $sliderRest, in: 0...60)
-                .onChange(of: sliderRest) { oldValue, newValue in
-                    // Zaokrúhlenie na celé čísla (1 sek. intervaly stačia)
-                    let roundedVal = round(newValue / 5).rounded() * 5
+                .onChange(of: sliderRest) { _, newValue in
+                    let roundedVal = (newValue / 5).rounded() * 5
                     restSeconds = Int(roundedVal)
                     sliderRest = roundedVal
                 }
