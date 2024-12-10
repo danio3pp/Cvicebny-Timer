@@ -3,11 +3,11 @@ import AudioToolbox
 import UIKit // Pre prístup k UIApplication
 
 struct ContentView: View {
-    @State private var totalSeconds = 60
-    @State private var totalSeries = 5
+    @State private var totalSeconds = 30
+    @State private var totalSeries = 8
     @State private var restSeconds = 15
 
-    @State private var currentSecond = 60
+    @State private var currentSecond = 30
     @State private var currentSeries = 1
 
     @State private var timerRunning = false
@@ -38,8 +38,8 @@ struct ContentView: View {
                             .cornerRadius(25)
 
                         Button("Reset") {
-                            totalSeconds = 60
-                            totalSeries = 5
+                            totalSeconds = 30
+                            totalSeries = 8
                             restSeconds = 15
                             resetTimer()
                         }
@@ -56,10 +56,10 @@ struct ContentView: View {
                         ZStack {
                             VStack(spacing: 20) {
                                 Text("\(currentSecond) s")
-                                    .font(.system(size: 160, weight: .bold))
+                                    .font(.system(size: 380, weight: .bold))
                                     .foregroundColor(.white)
                                     .padding()
-                                    .background(.ultraThinMaterial)
+                                    //.background(.ultraThinMaterial)
                                     .cornerRadius(20)
 
                                 HStack(spacing: 40) {
@@ -70,21 +70,25 @@ struct ContentView: View {
                                             startTimer()
                                         }
                                     }
-                                    .font(.title2)
-                                    .buttonStyle(.borderedProminent)
-                                    .tint(timerRunning ? .purple : .pink)
-                                    .cornerRadius(10)
+                                    .font(.system(size: 50, weight: .bold))
+                                    .frame(width: 200, height: 80)
+                                    .padding()
+                                    .buttonStyle(.bordered)
+                                    .cornerRadius(20)
+                                    .tint(timerRunning ? .green : .pink)
 
                                     Button("Reset") {
-                                        totalSeconds = 60
-                                        totalSeries = 5
+                                        totalSeconds = 30
+                                        totalSeries = 8
                                         restSeconds = 15
                                         resetTimer()
                                     }
-                                    .font(.title2)
+                                    .font(.system(size: 50, weight: .bold))
+                                    .frame(width: 200, height: 80)
+                                    .padding()
                                     .buttonStyle(.bordered)
                                     .tint(.purple)
-                                    .cornerRadius(10)
+                                    .cornerRadius(20)
                                 }
                             }
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -114,10 +118,12 @@ struct ContentView: View {
                                 Button("Uprav časovač") {
                                     showSettings.toggle()
                                 }
-                                .font(.title2)
-                                .buttonStyle(.borderedProminent)
-                                .tint(.pink)
-                                .cornerRadius(10)
+                                .font(.system(size: 30, weight: .bold))
+                                .frame(height: 80)
+                                .padding()
+                                .buttonStyle(.bordered)
+                                .tint(.purple)
+                                .cornerRadius(20)
                             }
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
                             .padding()
@@ -125,7 +131,7 @@ struct ContentView: View {
                         .frame(width: geo.size.width * 0.4)
                     }
                     .sheet(isPresented: $showSettings) {
-                        SettingsView(totalSeconds: $totalSeconds,   
+                        SettingsView(totalSeconds: $totalSeconds,
                                      totalSeries: $totalSeries,
                                      restSeconds: $restSeconds,
                                      onSave: {
@@ -231,7 +237,7 @@ struct SettingsView: View {
                     Text("Počet sekúnd (séria): \(totalSeconds)")
                         .fontWeight(.semibold)
                         .foregroundColor(.white)
-                    Slider(value: $sliderSeconds, in: 10...120)
+                    Slider(value: $sliderSeconds, in: 10...60)
                         .onChange(of: sliderSeconds) { _, newValue in
                             let roundedVal = (newValue / 5).rounded() * 5
                             totalSeconds = Int(roundedVal)
@@ -268,11 +274,12 @@ struct SettingsView: View {
                 onSave()
                 dismiss()
             }
-            .font(.title3)
-            .buttonStyle(.borderedProminent)
+            .font(.system(size: 30, weight: .bold))
+            .frame(height: 80)
+            .padding()
+            .buttonStyle(.bordered)
             .tint(.pink)
-            .cornerRadius(10)
-            .padding(.top, 20)
+            .cornerRadius(20)
         }
         .padding(30)
         .background(.ultraThinMaterial)
